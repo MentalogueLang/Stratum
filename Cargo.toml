@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "crates/stratum-cli",
+    "crates/stratum-layer",
+    "crates/stratum-fetch",
+    "crates/stratum-switch",
+    "crates/stratum-pin",
+]
+resolver = "2"

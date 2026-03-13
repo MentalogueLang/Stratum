@@ -1,0 +1,10 @@
+[package]
+name = "stratum-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+stratum-fetch = { path = "../stratum-fetch" }
+stratum-layer = { path = "../stratum-layer" }
+stratum-pin = { path = "../stratum-pin" }
+stratum-switch = { path = "../stratum-switch" }

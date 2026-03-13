@@ -1,0 +1,8 @@
+[package]
+name = "stratum-switch"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+stratum-layer = { path = "../stratum-layer" }
+stratum-pin = { path = "../stratum-pin" }
