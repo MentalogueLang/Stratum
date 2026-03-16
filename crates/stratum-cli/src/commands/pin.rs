@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use stratum_pin::Pinfile;
+use stratum_switch::ensure_inscribe_shim;
 
 pub fn run(args: &[String]) -> Result<(), String> {
     if args.len() != 1 {
@@ -15,6 +16,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
     let cwd = std::env::current_dir().map_err(|error| error.to_string())?;
     let path = Pinfile::path_for_dir(&cwd);
     Pinfile::write(&path, version).map_err(|error| error.to_string())?;
+    let _ = ensure_inscribe_shim().map_err(|error| error.to_string())?;
     println!("pinned {version} in {}", display_path(&path));
     Ok(())
 }

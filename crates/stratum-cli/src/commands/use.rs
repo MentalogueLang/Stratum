@@ -1,5 +1,5 @@
 use stratum_layer::find_layer;
-use stratum_switch::set_global_version;
+use stratum_switch::{ensure_inscribe_shim, set_global_version};
 
 pub fn run(args: &[String]) -> Result<(), String> {
     if args.len() != 1 {
@@ -21,6 +21,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
 
     set_global_version(version).map_err(|error| error.to_string())?;
+    let _ = ensure_inscribe_shim().map_err(|error| error.to_string())?;
     println!("using {version}");
     Ok(())
 }
