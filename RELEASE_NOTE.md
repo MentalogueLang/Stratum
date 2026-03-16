@@ -1,14 +1,12 @@
-# Stratum 0.1.1
+# Stratum 0.1.3
 
-## 0.1.1 - 2026-03-16
+## 0.1.3 - 2026-03-16
 
 ### Highlights
 
-- Added GitHub release workflow for packaging Stratum binaries.
-- Added GitHub release download + unpack for `stratum install`.
-- Added global version selection with `stratum use`.
+- Added Windows `inscribe.cmd` shim that targets the active Stratum version.
 
 ### Artifacts
 
-- `stratum-0.1.1-windows-x64.zip`
-- `stratum-0.1.1-linux-x64.tar.gz`
+- `stratum-0.1.3-windows-x64.zip`
+- `stratum-0.1.3-linux-x64.tar.gz`
