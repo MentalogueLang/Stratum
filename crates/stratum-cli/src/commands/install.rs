@@ -1,4 +1,3 @@
-// TODO: Implement the install module for stratum-cli.
-
-#[derive(Debug, Default)]
-pub struct InstallStub;
+pub fn run(_args: &[String]) -> Result<(), String> {
+    Err("stratum install is not implemented yet".to_string())
+}

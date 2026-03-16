@@ -1,4 +1,5 @@
 pub mod pinfile;
 pub mod resolve;
 
-// TODO: Implement the library root module for stratum-pin.
+pub use pinfile::Pinfile;
+pub use resolve::{find_pinfile, resolve_pin};

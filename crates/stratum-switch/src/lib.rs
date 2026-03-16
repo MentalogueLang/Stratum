@@ -5,4 +5,5 @@ pub mod shim;
 pub mod global;
 pub mod local;
 
-// TODO: Implement the library root module for stratum-switch.
+pub use global::{get_global_version, set_global_version};
+pub use local::resolve_local_version;
