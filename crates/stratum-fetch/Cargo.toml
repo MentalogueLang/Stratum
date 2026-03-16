@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 stratum-layer = { path = "../stratum-layer" }
+flate2 = "1.0"
+tar = "0.4"
+ureq = "2.9"
+zip = "0.6"

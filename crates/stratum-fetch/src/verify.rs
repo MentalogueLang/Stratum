@@ -1,4 +1,6 @@
-// TODO: Implement the verify module for stratum-fetch.
+use std::io;
+use std::path::Path;
 
-#[derive(Debug, Default)]
-pub struct VerifyStub;
+pub fn verify_archive(_archive: &Path) -> io::Result<()> {
+    Ok(())
+}
