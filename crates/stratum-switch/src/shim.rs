@@ -103,7 +103,7 @@ fn ensure_bin_on_path(bin_dir: &Path) -> io::Result<bool> {
 
     std::env::set_var("PATH", &updated);
     if cfg!(windows) {
-        persist_path_windows(&updated)?;
+        persist_path_windows(bin_dir)?;
     } else {
         let profile = user_profile_path().ok_or_else(|| {
             io::Error::new(
@@ -148,12 +148,44 @@ fn normalize_path(path: &str, windows: bool) -> String {
     }
 }
 
-fn persist_path_windows(updated: &str) -> io::Result<()> {
+fn persist_path_windows(bin_dir: &Path) -> io::Result<()> {
+    let machine_script = concat!(
+        "$bin = $env:STRATUM_PATH_ENTRY; ",
+        "if (-not $bin) { exit 1 }; ",
+        "$existing = [Environment]::GetEnvironmentVariable('Path','Machine'); ",
+        "if (-not $existing) { $updated = $bin } ",
+        "elseif ($existing -notlike \"*$bin*\") { $updated = \"$bin;$existing\" } ",
+        "else { exit 0 }; ",
+        "[Environment]::SetEnvironmentVariable('Path', $updated, 'Machine')"
+    );
+    let user_script = concat!(
+        "$bin = $env:STRATUM_PATH_ENTRY; ",
+        "if (-not $bin) { exit 1 }; ",
+        "$existing = [Environment]::GetEnvironmentVariable('Path','User'); ",
+        "if (-not $existing) { $updated = $bin } ",
+        "elseif ($existing -notlike \"*$bin*\") { $updated = \"$bin;$existing\" } ",
+        "else { exit 0 }; ",
+        "[Environment]::SetEnvironmentVariable('Path', $updated, 'User')"
+    );
     let status = Command::new("powershell")
         .arg("-NoProfile")
+        .arg("-ExecutionPolicy")
+        .arg("Bypass")
         .arg("-Command")
-        .arg("[Environment]::SetEnvironmentVariable('PATH', $env:STRATUM_PATH_UPDATE, 'User')")
-        .env("STRATUM_PATH_UPDATE", updated)
+        .arg(machine_script)
+        .env("STRATUM_PATH_ENTRY", bin_dir.to_string_lossy().to_string())
+        .status()?;
+    if status.success() {
+        return Ok(());
+    }
+
+    let status = Command::new("powershell")
+        .arg("-NoProfile")
+        .arg("-ExecutionPolicy")
+        .arg("Bypass")
+        .arg("-Command")
+        .arg(user_script)
+        .env("STRATUM_PATH_ENTRY", bin_dir.to_string_lossy().to_string())
         .status()?;
     if !status.success() {
         return Err(io::Error::new(
