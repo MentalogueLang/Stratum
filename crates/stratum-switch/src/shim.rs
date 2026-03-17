@@ -103,13 +103,7 @@ fn ensure_bin_on_path(bin_dir: &Path) -> io::Result<bool> {
 
     std::env::set_var("PATH", &updated);
     if cfg!(windows) {
-        let status = Command::new("setx").arg("PATH").arg(&updated).status()?;
-        if !status.success() {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "failed to persist PATH with setx",
-            ));
-        }
+        persist_path_windows(&updated)?;
     } else {
         let profile = user_profile_path().ok_or_else(|| {
             io::Error::new(
@@ -152,6 +146,22 @@ fn normalize_path(path: &str, windows: bool) -> String {
     } else {
         trimmed.to_string()
     }
+}
+
+fn persist_path_windows(updated: &str) -> io::Result<()> {
+    let status = Command::new("powershell")
+        .arg("-NoProfile")
+        .arg("-Command")
+        .arg("[Environment]::SetEnvironmentVariable('PATH', $env:STRATUM_PATH_UPDATE, 'User')")
+        .env("STRATUM_PATH_UPDATE", updated)
+        .status()?;
+    if !status.success() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "failed to persist PATH via PowerShell",
+        ));
+    }
+    Ok(())
 }
 
 fn home_dir() -> Option<PathBuf> {

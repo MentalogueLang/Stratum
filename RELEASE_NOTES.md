@@ -6,6 +6,7 @@
 
 - Added automatic shim setup on first run, including PATH registration for `inscribe`.
 - Added `stratum remove` for uninstalling installed layers.
+- Avoided PATH truncation on Windows by persisting PATH via PowerShell.
 
 ### Artifacts
 
