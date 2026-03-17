@@ -8,8 +8,8 @@
 
 ### Artifacts
 
-- `stratum-0.1.3-windows-x64.zip`
-- `stratum-0.1.3-linux-x64.tar.gz`
+- `stratum-0.1.2-windows-x64.zip`
+- `stratum-0.1.2-linux-x64.tar.gz`
 
 ## 0.1.1 - 2026-03-16
 
