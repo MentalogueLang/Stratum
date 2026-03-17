@@ -6,6 +6,9 @@ use stratum_switch as _;
 pub mod commands;
 
 fn main() {
+    if let Err(error) = stratum_switch::ensure_shim_ready() {
+        eprintln!("warning: unable to set up inscribe shim: {error}");
+    }
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     if let Err(message) = commands::dispatch(&args) {
         eprintln!("{message}");
