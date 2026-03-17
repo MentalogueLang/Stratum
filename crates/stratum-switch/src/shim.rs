@@ -25,18 +25,39 @@ pub fn ensure_shim_ready() -> io::Result<()> {
 pub fn ensure_inscribe_shim() -> io::Result<PathBuf> {
     let bin_dir = shim_bin_dir()?;
     fs::create_dir_all(&bin_dir)?;
-    let shim_path = bin_dir.join("inscribe.cmd");
+    let shim_path = if cfg!(windows) {
+        bin_dir.join("inscribe.cmd")
+    } else {
+        bin_dir.join("inscribe")
+    };
     let contents = build_inscribe_shim()?;
     fs::write(&shim_path, contents)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&shim_path)?.permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&shim_path, permissions)?;
+    }
     Ok(shim_path)
 }
 
 pub fn shim_bin_dir() -> io::Result<PathBuf> {
-    let base = std::env::var("LOCALAPPDATA")
-        .or_else(|_| std::env::var("APPDATA"))
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| std::env::temp_dir());
-    Ok(base.join("Mentalogue").join("Stratum").join("bin"))
+    if cfg!(windows) {
+        let base = std::env::var("LOCALAPPDATA")
+            .or_else(|_| std::env::var("APPDATA"))
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| std::env::temp_dir());
+        Ok(base.join("Mentalogue").join("Stratum").join("bin"))
+    } else {
+        let home = home_dir().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                "unable to resolve home directory",
+            )
+        })?;
+        Ok(home.join(".local").join("bin"))
+    }
 }
 
 fn build_inscribe_shim() -> io::Result<String> {
@@ -53,13 +74,17 @@ fn build_inscribe_shim() -> io::Result<String> {
             format!("stratum version {version} is not installed"),
         )
     })?;
-    let inscribe = layer.bin_dir().join("inscribe.exe");
+    let inscribe = if cfg!(windows) {
+        layer.bin_dir().join("inscribe.exe")
+    } else {
+        layer.bin_dir().join("inscribe")
+    };
 
-    let command = format!(
-        "@echo off\r\n\"{}\" %*\r\n",
-        inscribe.display()
-    );
-    Ok(command)
+    if cfg!(windows) {
+        Ok(format!("@echo off\r\n\"{}\" %*\r\n", inscribe.display()))
+    } else {
+        Ok(format!("#!/bin/sh\n\"{}\" \"$@\"\n", inscribe.display()))
+    }
 }
 
 fn ensure_bin_on_path(bin_dir: &Path) -> io::Result<bool> {
@@ -85,6 +110,25 @@ fn ensure_bin_on_path(bin_dir: &Path) -> io::Result<bool> {
                 "failed to persist PATH with setx",
             ));
         }
+    } else {
+        let profile = user_profile_path().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                "unable to resolve shell profile for PATH update",
+            )
+        })?;
+        let export_line = format!("export PATH=\"{}:$PATH\"", bin_dir.display());
+        let contents = fs::read_to_string(&profile).unwrap_or_default();
+        if !contents.contains(bin_dir.to_string_lossy().as_ref()) {
+            let mut updated_profile = contents;
+            if !updated_profile.ends_with('\n') && !updated_profile.is_empty() {
+                updated_profile.push('\n');
+            }
+            updated_profile.push_str("# stratum\n");
+            updated_profile.push_str(&export_line);
+            updated_profile.push('\n');
+            fs::write(&profile, updated_profile)?;
+        }
     }
 
     Ok(true)
@@ -108,6 +152,26 @@ fn normalize_path(path: &str, windows: bool) -> String {
     } else {
         trimmed.to_string()
     }
+}
+
+fn home_dir() -> Option<PathBuf> {
+    if let Ok(value) = std::env::var("HOME") {
+        if !value.is_empty() {
+            return Some(PathBuf::from(value));
+        }
+    }
+    if let Ok(value) = std::env::var("USERPROFILE") {
+        if !value.is_empty() {
+            return Some(PathBuf::from(value));
+        }
+    }
+    None
+}
+
+fn user_profile_path() -> Option<PathBuf> {
+    let home = home_dir()?;
+    let profile = home.join(".profile");
+    Some(profile)
 }
 
 pub fn resolve_inscribe_path(start: &Path) -> io::Result<PathBuf> {
