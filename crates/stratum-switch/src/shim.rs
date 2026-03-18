@@ -67,18 +67,7 @@ fn build_inscribe_shim() -> io::Result<String> {
     let version = local_version
         .or(global_version)
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no active stratum version"))?;
-
-    let layer = find_layer(&version)?.ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("stratum version {version} is not installed"),
-        )
-    })?;
-    let inscribe = if cfg!(windows) {
-        layer.bin_dir().join("inscribe.exe")
-    } else {
-        layer.bin_dir().join("inscribe")
-    };
+    let inscribe = active_inscribe_path(&version)?;
 
     if cfg!(windows) {
         Ok(format!("@echo off\r\n\"{}\" %*\r\n", inscribe.display()))
@@ -224,11 +213,20 @@ pub fn resolve_inscribe_path(start: &Path) -> io::Result<PathBuf> {
     let version = local_version
         .or(global_version)
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no active stratum version"))?;
-    let layer = find_layer(&version)?.ok_or_else(|| {
+    active_inscribe_path(&version)
+}
+
+fn active_inscribe_path(version: &str) -> io::Result<PathBuf> {
+    let layer = find_layer(version)?.ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::NotFound,
             format!("stratum version {version} is not installed"),
         )
     })?;
-    Ok(layer.bin_dir().join("inscribe.exe"))
+    let inscribe = if cfg!(windows) {
+        layer.path.join("inscribe-cli.exe")
+    } else {
+        layer.path.join("inscribe-cli")
+    };
+    Ok(inscribe)
 }
