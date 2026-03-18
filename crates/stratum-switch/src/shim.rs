@@ -156,7 +156,8 @@ fn persist_path_windows(bin_dir: &Path) -> io::Result<()> {
         "if (-not $existing) { $updated = $bin } ",
         "elseif ($existing -notlike \"*$bin*\") { $updated = \"$bin;$existing\" } ",
         "else { exit 0 }; ",
-        "[Environment]::SetEnvironmentVariable('Path', $updated, 'Machine')"
+        "try { [Environment]::SetEnvironmentVariable('Path', $updated, 'Machine') } ",
+        "catch { exit 1 }"
     );
     let user_script = concat!(
         "$bin = $env:STRATUM_PATH_ENTRY; ",
@@ -165,7 +166,8 @@ fn persist_path_windows(bin_dir: &Path) -> io::Result<()> {
         "if (-not $existing) { $updated = $bin } ",
         "elseif ($existing -notlike \"*$bin*\") { $updated = \"$bin;$existing\" } ",
         "else { exit 0 }; ",
-        "[Environment]::SetEnvironmentVariable('Path', $updated, 'User')"
+        "try { [Environment]::SetEnvironmentVariable('Path', $updated, 'User') } ",
+        "catch { exit 1 }"
     );
     let status = Command::new("powershell")
         .arg("-NoProfile")
