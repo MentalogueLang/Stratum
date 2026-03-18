@@ -17,7 +17,10 @@ pub fn ensure_shim_ready() -> io::Result<()> {
     }
     match ensure_inscribe_shim() {
         Ok(_) => Ok(()),
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            clear_inscribe_shim()?;
+            Ok(())
+        }
         Err(error) => Err(error),
     }
 }
@@ -135,6 +138,19 @@ fn normalize_path(path: &str, windows: bool) -> String {
     } else {
         trimmed.to_string()
     }
+}
+
+fn clear_inscribe_shim() -> io::Result<()> {
+    let bin_dir = shim_bin_dir()?;
+    let shim_path = if cfg!(windows) {
+        bin_dir.join("inscribe.cmd")
+    } else {
+        bin_dir.join("inscribe")
+    };
+    if shim_path.exists() {
+        fs::remove_file(shim_path)?;
+    }
+    Ok(())
 }
 
 fn persist_path_windows(bin_dir: &Path) -> io::Result<()> {
